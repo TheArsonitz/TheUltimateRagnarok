@@ -6,5 +6,5 @@ Questo progetto rappresenta lo sviluppo di un gioco PvP/PvE. Nei vari file di un
   4. Cartella Scenes: qui vanno messe: arene, schermate di gioco, ...
 
 Per i set di comandi si scelgono i seguenti:
-  1. Salto: W - Accovacciata: S - Sinistra: A - Destra: D - Colpo: Space - Raccolta: E
-  2. Salto: 8 - Accovacciata: 5 - Sinistra: 4 - Destra: 6 - Colpo: 0 - Raccolta: 7
+  1. Salto: W - Accovacciata: S - Sinistra: A - Destra: D - Colpo: Space - Raccolta: E - Parata: S
+  2. Salto: [8] - Accovacciata: [5] - Sinistra: [4] - Destra: [6] - Colpo: [0] - Raccolta: [7] - Parata: [5]
