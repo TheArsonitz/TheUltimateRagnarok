@@ -22,4 +22,10 @@ public class LevelLoader : MonoBehaviour
     {
         SceneManager.LoadScene(nomeScena);
     }
+
+    // Aggiungi questa funzione per tornare al menu iniziale
+    public void TornaAlMenu()
+    {
+        SceneManager.LoadScene("MainMenu");
+    }
 }
