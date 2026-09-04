@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,6 +7,12 @@ using UnityEngine.UI;
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
+
+    [Header("Livelli")]
+    public int livelloAttuale = 1;
+
+    [Header("Modalita'")]
+    public bool modalitaPvE = true;
 
     [Header("Impostazioni Base")]
     public float durataPartitaSecondi = 180f;
@@ -88,10 +94,9 @@ public class GameManager : MonoBehaviour
 
     public void GiocatoreMorto(string nomeSconfitto)
     {
-        if (!partitaInCorso) return; 
+        if (!partitaInCorso) return;
 
         partitaInCorso = false;
-
         string messaggio = "";
 
         if (nomeSconfitto == player1.name)
@@ -101,6 +106,21 @@ public class GameManager : MonoBehaviour
         else
         {
             messaggio = "K.O.!\nVINCE PLAYER 1";
+
+            if (modalitaPvE)
+            {
+                float tempoImpiegato = durataPartitaSecondi - tempoRimanente;
+                string nomeGiocatore = PlayerPrefs.GetString("PlayerName", "Eroe");
+                ClassificaManager.SalvaTempo(livelloAttuale, nomeGiocatore, tempoImpiegato);
+
+                int livelloMaxSbloccato = PlayerPrefs.GetInt("LivelloMaxSbloccato", 1);
+                if (livelloAttuale >= livelloMaxSbloccato)
+                {
+                    PlayerPrefs.SetInt("LivelloMaxSbloccato", livelloAttuale + 1);
+                    PlayerPrefs.Save();
+                    Debug.Log("Hai sbloccato il livello " + (livelloAttuale + 1) + "!");
+                }
+            }
         }
 
         MostraSchermataFinale(messaggio);

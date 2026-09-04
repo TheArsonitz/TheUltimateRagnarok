@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -59,6 +59,9 @@ public class HealthSystem : MonoBehaviour
     }
 
     private void Muori() {
+        if (GameManager.instance != null) {
+            GameManager.instance.GiocatoreMorto(gameObject.name);
+        }
         gameObject.SetActive(false);
     }
 

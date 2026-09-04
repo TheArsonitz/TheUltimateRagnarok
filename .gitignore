@@ -15,3 +15,6 @@
 *.pidb
 *.svclog
 *.openedition
+
+Assets/AgentTask.cs
+Assets/AgentTask.cs.meta

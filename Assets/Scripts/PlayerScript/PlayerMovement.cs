@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -25,6 +25,15 @@ public class PlayerMovement : MonoBehaviour
     [Header("Animazioni")]
     public Animator animator;
 
+    public void AggiornaComandiDaPrefs() {
+        int setComandi = PlayerPrefs.GetInt("SetComandiP1", 0);
+        if (setComandi == 1) {
+            tastoSalto = KeyCode.Keypad8;
+        } else {
+            tastoSalto = KeyCode.W;
+        }
+    }
+
     bool IsATerra() {
         RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, 0.7f, groundLayer);
         return hit.collider != null;
@@ -40,11 +49,11 @@ public class PlayerMovement : MonoBehaviour
         Vector3 copiaScala = transform.localScale;
         copiaScala.x *= -1;
         transform.localScale = copiaScala;
-
     }
 
     void Start() {
         rb = GetComponent<Rigidbody2D>();
+        AggiornaComandiDaPrefs();
     }
 
     // Update is called once per frame
@@ -58,19 +67,34 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        horizontalPos = Input.GetAxisRaw(asseX);
+        int setComandi = PlayerPrefs.GetInt("SetComandiP1", 0);
+        if (setComandi == 1) {
+            // Set 2: Tastierino (4 = Sx, 6 = Dx)
+            horizontalPos = 0f;
+            if (Input.GetKey(KeyCode.Keypad6)) horizontalPos += 1f;
+            if (Input.GetKey(KeyCode.Keypad4)) horizontalPos -= 1f;
+        } else {
+            // Set 1: WASD (A = Sx, D = Dx)
+            horizontalPos = 0f;
+            if (Input.GetKey(KeyCode.D)) horizontalPos += 1f;
+            if (Input.GetKey(KeyCode.A)) horizontalPos -= 1f;
+            if (horizontalPos == 0f && !string.IsNullOrEmpty(asseX)) horizontalPos = Input.GetAxisRaw(asseX);
+        }
 
         if (horizontalPos > 0 && !versoDestra) 
             Flip();
         else if (horizontalPos < 0 && versoDestra) 
             Flip();
 
-
         if(IsATerra() ) {
             extraJump = 1;
         }
 
-        if (Input.GetKeyDown(tastoSalto)) {
+        bool vuoleSaltare = (setComandi == 1)
+            ? (Input.GetKeyDown(KeyCode.Keypad8) || Input.GetKeyDown(tastoSalto))
+            : (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(tastoSalto));
+
+        if (vuoleSaltare) {
             if (IsATerra()) {
                 Jump();
             } else if (extraJump > 0)

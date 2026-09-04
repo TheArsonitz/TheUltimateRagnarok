@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class LevelLoader : MonoBehaviour
@@ -7,25 +7,35 @@ public class LevelLoader : MonoBehaviour
 
     void Awake()
     {
-        if (instance == null)
+        // Imposta l'istanza per la scena corrente
+        instance = this;
+    }
+
+    void OnDestroy()
+    {
+        if (instance == this)
         {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
+            instance = null;
         }
     }
 
     public void CaricaLivello(string nomeScena)
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene(nomeScena);
     }
 
-    // Aggiungi questa funzione per tornare al menu iniziale
+    // Funzione per tornare al menu iniziale
     public void TornaAlMenu()
     {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenu");
+    }
+
+    // Metodo statico richiamabile direttamente da qualunque script
+    public static void CaricaMenuPrincipale()
+    {
+        Time.timeScale = 1f;
         SceneManager.LoadScene("MainMenu");
     }
 }

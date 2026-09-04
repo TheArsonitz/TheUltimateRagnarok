@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,8 +13,26 @@ public abstract class PlayerAttack : MonoBehaviour
     [Header("Animazioni")]
     public Animator animator;
 
+    protected virtual void Start() {
+        AggiornaComandiDaPrefs();
+    }
+
+    public void AggiornaComandiDaPrefs() {
+        int setComandi = PlayerPrefs.GetInt("SetComandiP1", 0);
+        if (setComandi == 1) {
+            attacco = KeyCode.Keypad0;
+        } else {
+            attacco = KeyCode.Space;
+        }
+    }
+
     protected virtual void Update() {
-        if(Input.GetKeyDown(attacco) && Time.time >= prossimoAttacco) {
+        int setComandi = PlayerPrefs.GetInt("SetComandiP1", 0);
+        bool attacca = (setComandi == 1)
+            ? (Input.GetKeyDown(KeyCode.Keypad0) || Input.GetKeyDown(attacco))
+            : (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(attacco));
+
+        if(attacca && Time.time >= prossimoAttacco) {
 
             EseguiAttacco();
             prossimoAttacco = Time.time + tempoRicaricaAttacco;
