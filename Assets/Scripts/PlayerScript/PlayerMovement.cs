@@ -35,7 +35,13 @@ public class PlayerMovement : MonoBehaviour
     }
 
     bool IsATerra() {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, 0.7f, groundLayer);
+        Collider2D myCol = GetComponent<Collider2D>();
+        if (myCol != null) myCol.enabled = false;
+        
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, Mathf.Abs(transform.localScale.y) / 2f + 0.3f, groundLayer);
+        
+        if (myCol != null) myCol.enabled = true;
+        
         return hit.collider != null;
     }
 
@@ -86,13 +92,14 @@ public class PlayerMovement : MonoBehaviour
         else if (horizontalPos < 0 && versoDestra) 
             Flip();
 
-        if(IsATerra() ) {
+        // extraJump viene resettato solo quando tocchiamo terra
+        if(IsATerra()) {
             extraJump = 1;
         }
 
         bool vuoleSaltare = (setComandi == 1)
             ? (Input.GetKeyDown(KeyCode.Keypad8) || Input.GetKeyDown(tastoSalto))
-            : (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(tastoSalto));
+            : (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(tastoSalto));
 
         if (vuoleSaltare) {
             if (IsATerra()) {

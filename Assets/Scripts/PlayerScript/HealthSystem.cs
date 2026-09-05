@@ -1,20 +1,23 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class HealthSystem : MonoBehaviour
+public class HealthSystem : MonoBehaviour, IDamageable
 {
-
     [Header("Parametri Vitali")]
     public float vitaMassima = 100f;
     public float vitaAttuale;
 
     [Header("Interfaccia Grafica")]
-    public Image barraVita;
+    public Slider sliderVita;
 
     private PlayerDefense difesa;
     
+    // Evento per comunicare la morte
+    public event Action<GameObject> OnDeath;
+    
+    private bool isMorto = false;
+
     void Start()
     {
         difesa = GetComponent<PlayerDefense>();
@@ -22,14 +25,13 @@ public class HealthSystem : MonoBehaviour
         AggiornaBarraVita();
     }
 
-
-    public void PrendiDanno(float quantitaDanno) {
+    public void PrendiDanno(float quantitaDanno) 
+    {
+        if (isMorto) return;
 
         if (difesa != null && difesa.isInDifesa) {
             quantitaDanno = quantitaDanno * 0.2f;
-        
         }
-
 
         vitaAttuale -= quantitaDanno;
         vitaAttuale = Mathf.Clamp(vitaAttuale, 0, vitaMassima);
@@ -39,30 +41,36 @@ public class HealthSystem : MonoBehaviour
         if (vitaAttuale <= 0) {
             Muori();
         }
-
     }
 
-    private void AggiornaBarraVita() {
-        if(barraVita != null) {
+    private void AggiornaBarraVita() 
+    {
+        if (sliderVita != null) 
+        {
+            sliderVita.maxValue = vitaMassima;
+            sliderVita.value = vitaAttuale;
 
-            float percentuale = vitaAttuale / vitaMassima;
-            barraVita.fillAmount = percentuale;
-
-            if (percentuale > 0.5f)
-                barraVita.color = Color.green;
-            else if (percentuale > 0.25f)
-                barraVita.color = new Color(1f, 0.5f, 0f);
-            else
-                barraVita.color = Color.red;
-
+            Image fillImage = sliderVita.fillRect.GetComponent<Image>();
+            if (fillImage != null)
+            {
+                float percentuale = vitaAttuale / vitaMassima;
+                if (percentuale > 0.5f)
+                    fillImage.color = Color.green;
+                else if (percentuale > 0.25f)
+                    fillImage.color = new Color(1f, 0.5f, 0f);
+                else
+                    fillImage.color = Color.red;
+            }
         }
     }
 
-    private void Muori() {
-        if (GameManager.instance != null) {
-            GameManager.instance.GiocatoreMorto(gameObject.name);
-        }
+    private void Muori() 
+    {
+        isMorto = true;
+        
+        // Notifichiamo gli ascoltatori (es. GameManager)
+        OnDeath?.Invoke(gameObject);
+        
         gameObject.SetActive(false);
     }
-
 }

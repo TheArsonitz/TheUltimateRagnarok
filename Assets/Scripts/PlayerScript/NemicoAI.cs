@@ -11,11 +11,11 @@ public class NemicoAI : MonoBehaviour
 
     [Header("Statistiche Combattimento")]
     public float velocita = 3f;
-    public float raggioAttacco = 1.5f; // Per il Corpo a Corpo è la hitbox, per la Distanza è il range di tiro
+    public float raggioAttacco = 1.5f; 
     public float tempoTraAttacchi = 2f;
     
     [Header("Solo per Combattimento a Distanza")]
-    public float raggioFuga = 4f; // Se il giocatore si avvicina più di questo valore, il boss indietreggia
+    public float raggioFuga = 4f; 
 
     [Header("Armi a Distanza (Ignora se Corpo a Corpo)")]
     public GameObject proiettilePrefab;
@@ -39,7 +39,7 @@ public class NemicoAI : MonoBehaviour
 
     void Update()
     {
-        if (giocatore == null) return;
+        if (giocatore == null || Time.timeScale == 0f) return;
 
         GiraVersoAvversario();
         float distanza = Vector2.Distance(transform.position, giocatore.position);
@@ -64,9 +64,9 @@ public class NemicoAI : MonoBehaviour
             case StatoBoss.Fuga:
                 if (distanza >= raggioAttacco) 
                 {
-                    statoAttuale = StatoBoss.Attacco; // Abbastanza lontano da sparare
+                    statoAttuale = StatoBoss.Attacco; 
                 }
-                else if (distanza >= raggioFuga + 1f) // Un po' di margine per non oscillare
+                else if (distanza >= raggioFuga + 1f) 
                 {
                     statoAttuale = StatoBoss.Avvicinamento;
                 }
@@ -77,13 +77,11 @@ public class NemicoAI : MonoBehaviour
                 break;
 
             case StatoBoss.Attacco:
-                // Controlla che non sia cambiato lo stato di sicurezza nel frattempo (se a distanza)
                 if (stileDiCombattimento == TipoBoss.Distanza && distanza < raggioFuga)
                 {
                     statoAttuale = StatoBoss.Fuga;
                     break;
                 }
-                // Se il bersaglio esce dal range, torna a inseguirlo
                 if (distanza > raggioAttacco)
                 {
                     statoAttuale = StatoBoss.Avvicinamento;
@@ -104,7 +102,6 @@ public class NemicoAI : MonoBehaviour
                 break;
 
             case StatoBoss.Recupero:
-                // Anche in recupero, se a distanza, fuggiamo se si avvicina troppo
                 if (stileDiCombattimento == TipoBoss.Distanza && distanza < raggioFuga)
                 {
                     statoAttuale = StatoBoss.Fuga;
@@ -121,26 +118,37 @@ public class NemicoAI : MonoBehaviour
 
     void MuovitiVersoGiocatore()
     {
-        Vector2 destinazione = new Vector2(giocatore.position.x, transform.position.y);
-        transform.position = Vector2.MoveTowards(transform.position, destinazione, velocita * Time.deltaTime);
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        if (rb != null) {
+            float dirX = Mathf.Sign(giocatore.position.x - transform.position.x);
+            rb.velocity = new Vector2(dirX * velocita, rb.velocity.y);
+        } else {
+            Vector2 destinazione = new Vector2(giocatore.position.x, transform.position.y);
+            transform.position = Vector2.MoveTowards(transform.position, destinazione, velocita * Time.deltaTime);
+        }
     }
 
     void MuovitiLontanoDalGiocatore()
     {
-        // Trova la direzione opposta
-        float dirX = transform.position.x - giocatore.position.x;
-        Vector2 direzione = new Vector2(Mathf.Sign(dirX), 0);
-        transform.Translate(direzione * velocita * Time.deltaTime);
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        if (rb != null) {
+            float dirX = Mathf.Sign(transform.position.x - giocatore.position.x);
+            rb.velocity = new Vector2(dirX * velocita, rb.velocity.y);
+        } else {
+            float dirX = transform.position.x - giocatore.position.x;
+            Vector2 direzione = new Vector2(Mathf.Sign(dirX), 0);
+            transform.Translate(direzione * velocita * Time.deltaTime);
+        }
     }
 
     void EseguiAttaccoMelee()
     {
         if (animator != null) animator.SetTrigger("Attacco");
 
-        HealthSystem vitaDelGiocatore = giocatore.GetComponent<HealthSystem>();
-        if (vitaDelGiocatore != null)
+        IDamageable target = giocatore.GetComponent<IDamageable>();
+        if (target != null)
         {
-            vitaDelGiocatore.PrendiDanno(15f);
+            target.PrendiDanno(15f);
         }
     }
 
@@ -163,9 +171,13 @@ public class NemicoAI : MonoBehaviour
 
     void GiraVersoAvversario()
     {
+        float scaleX = Mathf.Abs(transform.localScale.x);
+        float scaleY = transform.localScale.y;
+        float scaleZ = transform.localScale.z;
+
         if (giocatore.position.x > transform.position.x)
-            transform.localScale = new Vector3(1, 1, 1);
+            transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
         else
-            transform.localScale = new Vector3(-1, 1, 1);
+            transform.localScale = new Vector3(-scaleX, scaleY, scaleZ);
     }
 }

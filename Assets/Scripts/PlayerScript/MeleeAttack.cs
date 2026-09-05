@@ -1,45 +1,38 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MeleeAttack : PlayerAttack
 {
     [Header("Parametri HitBox")]
-    //Variabile che serve a definire quale oggetto del personaggio
-    //effettuerà il colpo corpo a corpo (spada, pugno, etc...)
     public Transform puntoAttacco;
-    //Variabile che definisce l'HitBox
     public float raggioAttacco = 0.5f;
-
     public LayerMask layerNemici;
 
-    protected override void EseguiAttacco() {
-        
+    protected override void EseguiAttacco() 
+    {
         if (animator != null) {
             animator.SetTrigger("AttaccoMelee");
         }
 
-        Collider2D[] nemiciColpiti = Physics2D.OverlapCircleAll(puntoAttacco.position, raggioAttacco, layerNemici);
+        Vector3 posAttacco = puntoAttacco != null ? puntoAttacco.position : transform.position;
+        Collider2D[] nemiciColpiti = Physics2D.OverlapCircleAll(posAttacco, raggioAttacco, layerNemici);
 
-        foreach (Collider2D nemico in nemiciColpiti) {
-            HealthSystem vitaNemico = nemico.GetComponent<HealthSystem>();
+        foreach (Collider2D nemico in nemiciColpiti) 
+        {
+            // Evita di auto-colpirsi!
+            if (nemico.gameObject == this.gameObject) continue;
 
-            if (vitaNemico != null)
+            IDamageable target = nemico.GetComponent<IDamageable>();
+            if (target != null)
             {
-                vitaNemico.PrendiDanno(damage);
+                target.PrendiDanno(damage);
             }
-
         }
-
     }
 
-    //Questo metodo serve per vedere il contorno dell'HitBox così
-    //si setta il raggioAttacco più facilmente
-    private void OnDrawGizmosSelected() {
-        if (puntoAttacco == null) return;
-
+    private void OnDrawGizmosSelected() 
+    {
+        Vector3 posAttacco = puntoAttacco != null ? puntoAttacco.position : transform.position;
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(puntoAttacco.position, raggioAttacco);
+        Gizmos.DrawWireSphere(posAttacco, raggioAttacco);
     }
-
 }

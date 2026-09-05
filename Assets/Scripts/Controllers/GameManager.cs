@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -8,25 +7,20 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
-    [Header("Livelli")]
+    [Header("Impostazioni Livello")]
     public int livelloAttuale = 1;
-
-    [Header("Modalita'")]
-    public bool modalitaPvE = true;
-
-    [Header("Impostazioni Base")]
-    public float durataPartitaSecondi = 180f;
+    public float tempoIniziale = 180f;
+    private float tempoAttuale;
 
     [Header("Riferimenti Giocatori")]
     public GameObject player1;
     public GameObject player2;
 
     [Header("Interfaccia (UI)")]
-    public Text testoTimer;        
-    public Text testoVittoria;     
-    public GameObject pannelloFine;
+    public GameObject pannelloVittoria;
+    public GameObject pannelloSconfitta;
+    public Text testoTimer;
 
-    private float tempoRimanente;
     private bool partitaInCorso = true;
 
     void Awake()
@@ -37,126 +31,133 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-       
-        tempoRimanente = durataPartitaSecondi;
         partitaInCorso = true;
-
-        
         Time.timeScale = 1;
-        if (pannelloFine != null) pannelloFine.SetActive(false);
+        tempoAttuale = tempoIniziale;
+        
+        if (pannelloVittoria != null) pannelloVittoria.SetActive(false);
+        if (pannelloSconfitta != null) pannelloSconfitta.SetActive(false);
+
+        if (player1 != null)
+        {
+            HealthSystem hs1 = player1.GetComponent<HealthSystem>();
+            if (hs1 != null) hs1.OnDeath += GestisciMorte;
+        }
+
+        if (player2 != null)
+        {
+            HealthSystem hs2 = player2.GetComponent<HealthSystem>();
+            if (hs2 != null) hs2.OnDeath += GestisciMorte;
+        }
     }
 
     void Update()
     {
         if (partitaInCorso)
         {
-            
-            tempoRimanente -= Time.deltaTime;
-
-            
-            AggiornaGraficaTimer();
-
-            
-            if (tempoRimanente <= 0)
+            tempoAttuale -= Time.deltaTime;
+            if (tempoAttuale <= 0)
             {
-                tempoRimanente = 0;
-                FinePerTempo();
+                tempoAttuale = 0;
+                partitaInCorso = false;
+                StartCoroutine(RoutineSconfitta());
+            }
+
+            if (testoTimer != null)
+            {
+                int m = Mathf.FloorToInt(tempoAttuale / 60);
+                int s = Mathf.FloorToInt(tempoAttuale % 60);
+                testoTimer.text = string.Format("{0:00}:{1:00}", m, s);
+                testoTimer.color = tempoAttuale <= 10f ? Color.red : Color.white;
             }
         }
     }
 
-    
-    void FinePerTempo()
+    void OnDestroy()
     {
-        partitaInCorso = false;
-
-       
-        float vitaP1 = player1.GetComponent<HealthSystem>().vitaAttuale;
-        float vitaP2 = player2.GetComponent<HealthSystem>().vitaAttuale;
-
-        string messaggio = "";
-
-        if (vitaP1 > vitaP2)
+        if (player1 != null)
         {
-            messaggio = "TEMPO SCADUTO!\nVINCE PLAYER 1 (Per Vita)";
+            HealthSystem hs1 = player1.GetComponent<HealthSystem>();
+            if (hs1 != null) hs1.OnDeath -= GestisciMorte;
         }
-        else if (vitaP2 > vitaP1)
+        if (player2 != null)
         {
-            messaggio = "TEMPO SCADUTO!\nVINCE PLAYER 2 (Per Vita)";
+            HealthSystem hs2 = player2.GetComponent<HealthSystem>();
+            if (hs2 != null) hs2.OnDeath -= GestisciMorte;
         }
-        else
-        {
-            messaggio = "TEMPO SCADUTO!\nPAREGGIO PERFETTO!";
-        }
-
-        MostraSchermataFinale(messaggio);
     }
 
-    public void GiocatoreMorto(string nomeSconfitto)
+    private void GestisciMorte(GameObject sconfitto)
     {
         if (!partitaInCorso) return;
-
         partitaInCorso = false;
-        string messaggio = "";
 
-        if (nomeSconfitto == player1.name)
+        if (sconfitto == player1)
         {
-            messaggio = "K.O.!\nVINCE PLAYER 2";
+            StartCoroutine(RoutineSconfitta());
+        }
+        else if (sconfitto == player2)
+        {
+            StartCoroutine(RoutineVittoria());
+        }
+    }
+
+    private IEnumerator RoutineSconfitta()
+    {
+        yield return new WaitForSeconds(2f);
+        if (pannelloSconfitta != null) pannelloSconfitta.SetActive(true);
+        Time.timeScale = 0; 
+    }
+
+    private IEnumerator RoutineVittoria()
+    {
+        yield return new WaitForSeconds(2f);
+
+        int currentLevel = SceneManager.GetActiveScene().buildIndex;
+        int livelloMaxSbloccato = PlayerPrefs.GetInt("LivelloMaxSbloccato", 1);
+        
+        // Evitiamo che sblocchi il Livello 6 (che non esiste)
+        if (currentLevel >= livelloMaxSbloccato && currentLevel < 5)
+        {
+            PlayerPrefs.SetInt("LivelloMaxSbloccato", currentLevel + 1);
+        }
+
+        // Salva il tempo in classifica (recupera in automatico il nome)
+        float tempoImpiegato = tempoIniziale - tempoAttuale;
+        ClassificaManager.SalvaTempo(currentLevel, tempoImpiegato);
+
+        if (pannelloVittoria != null) pannelloVittoria.SetActive(true);
+        Time.timeScale = 0;
+    }
+
+    public void RiavviaLivello()
+    {
+        Time.timeScale = 1;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void ProssimoLivello()
+    {
+        Time.timeScale = 1;
+        int currentIndex = SceneManager.GetActiveScene().buildIndex;
+        
+        // Se siamo al livello 5, non c'è un "Prossimo Livello", quindi forziamo il ritorno al menu
+        if (currentIndex < 5)
+        {
+            SceneManager.LoadScene(currentIndex + 1);
         }
         else
         {
-            messaggio = "K.O.!\nVINCE PLAYER 1";
-
-            if (modalitaPvE)
-            {
-                float tempoImpiegato = durataPartitaSecondi - tempoRimanente;
-                string nomeGiocatore = PlayerPrefs.GetString("PlayerName", "Eroe");
-                ClassificaManager.SalvaTempo(livelloAttuale, nomeGiocatore, tempoImpiegato);
-
-                int livelloMaxSbloccato = PlayerPrefs.GetInt("LivelloMaxSbloccato", 1);
-                if (livelloAttuale >= livelloMaxSbloccato)
-                {
-                    PlayerPrefs.SetInt("LivelloMaxSbloccato", livelloAttuale + 1);
-                    PlayerPrefs.Save();
-                    Debug.Log("Hai sbloccato il livello " + (livelloAttuale + 1) + "!");
-                }
-            }
-        }
-
-        MostraSchermataFinale(messaggio);
-    }
-
-    void AggiornaGraficaTimer()
-    {
-        if (testoTimer != null)
-        {
-            float minuti = Mathf.FloorToInt(tempoRimanente / 60);
-            float secondi = Mathf.FloorToInt(tempoRimanente % 60);
-            testoTimer.text = string.Format("{0:00}:{1:00}", minuti, secondi);
-
-           
-            if (tempoRimanente <= 10) testoTimer.color = Color.red;
-            else testoTimer.color = Color.white;
+            EsciAlMenu();
         }
     }
 
-    void MostraSchermataFinale(string testo)
+    public void EsciAlMenu()
     {
-        Debug.Log(testo); 
-
-        if (testoVittoria != null) testoVittoria.text = testo;
-        if (pannelloFine != null) pannelloFine.SetActive(true);
-
-        Time.timeScale = 0; 
-
-        StartCoroutine(AttendiERiavvia());
-    }
-
-    System.Collections.IEnumerator AttendiERiavvia()
-    {
-        yield return new WaitForSecondsRealtime(3f);
-
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        Time.timeScale = 1;
+        // Permette al menu di riaprirsi direttamente nella schermata Livelli
+        PlayerPrefs.SetInt("RitornoDaPvE", 1);
+        PlayerPrefs.Save();
+        SceneManager.LoadScene(0);
     }
 }
-

@@ -1,10 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Proiettile : MonoBehaviour
 {
-
     private GameObject proprietario;
     private Rigidbody2D rb;
 
@@ -21,20 +18,19 @@ public class Proiettile : MonoBehaviour
     }
 
     public void Lancia(float direzione, GameObject chiHaSparato) {
-
         proprietario = chiHaSparato;
-
         if(rb == null) rb = GetComponent<Rigidbody2D>();
         rb.velocity = new Vector2(velocita * direzione, 0);
     }
 
-    private void OnTriggerEnter2D(Collider2D collision) {
-
+    private void OnTriggerEnter2D(Collider2D collision) 
+    {
         if (collision.gameObject == proprietario) return;
 
-        HealthSystem vita = collision.GetComponent<HealthSystem>();
-        if(vita != null) {
-            vita.PrendiDanno(danno);
+        IDamageable target = collision.GetComponent<IDamageable>();
+        if(target != null) 
+        {
+            target.PrendiDanno(danno);
             DistruggiProiettile();
             return;
         }
@@ -42,11 +38,9 @@ public class Proiettile : MonoBehaviour
         if ((layerMuri.value & (1 << collision.gameObject.layer)) > 0) {
             DistruggiProiettile();
         }
-
     }
     
     void DistruggiProiettile() {
         Destroy(gameObject);
     }
-
 }
