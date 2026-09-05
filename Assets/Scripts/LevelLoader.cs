@@ -29,6 +29,8 @@ public class LevelLoader : MonoBehaviour
     public void TornaAlMenu()
     {
         Time.timeScale = 1f;
+        PlayerPrefs.SetInt("RitornoDaPvE", 1);
+        PlayerPrefs.Save();
         SceneManager.LoadScene("MainMenu");
     }
 

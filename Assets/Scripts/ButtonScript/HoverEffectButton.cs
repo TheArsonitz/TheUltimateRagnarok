@@ -8,25 +8,31 @@ public class HoverEffectButton : MonoBehaviour, IPointerEnterHandler, IPointerEx
     private Vector3 scalaOriginale;
     private bool inizializzato = false;
 
-    [Header("Scala Ingrandimento")]
+    [Header("Impostazioni Ingrandimento")]
+    [Tooltip("Lascia vuoto per ingrandire questo stesso oggetto, oppure trascina l'oggetto grafico da ingrandire.")]
+    public Transform bersaglioGrafico;
     public float moltiplicatore = 1.1f;
+
+    private Transform TargetTransform 
+    {
+        get { return bersaglioGrafico != null ? bersaglioGrafico : transform; }
+    }
 
     void Awake() 
     {
         if (!inizializzato)
         {
-            scalaOriginale = transform.localScale;
+            scalaOriginale = TargetTransform.localScale;
             inizializzato = true;
         }
     }
 
     void Start() 
     {
-        // Se il bottone ha parti trasparenti grandi, abbassiamo la soglia a 0.1f per rendere il click molto più facile
         var img = GetComponent<UnityEngine.UI.Image>();
         if (img != null && img.sprite != null) 
         {
-            try { img.alphaHitTestMinimumThreshold = 0.1f; } catch {}
+            try { img.alphaHitTestMinimumThreshold = 0f; } catch {} // Usiamo 0 per evitare bug
         }
     }
 
@@ -34,8 +40,7 @@ public class HoverEffectButton : MonoBehaviour, IPointerEnterHandler, IPointerEx
     {
         if (inizializzato)
         {
-            // Ripristina la scala normale quando il pannello viene riattivato
-            transform.localScale = scalaOriginale;
+            TargetTransform.localScale = scalaOriginale;
         }
     }
 
@@ -43,18 +48,17 @@ public class HoverEffectButton : MonoBehaviour, IPointerEnterHandler, IPointerEx
     {
         if (inizializzato)
         {
-            // Assicurati che non rimanga ingrandito se il pannello viene chiuso mentre il mouse è sopra
-            transform.localScale = scalaOriginale;
+            TargetTransform.localScale = scalaOriginale;
         }
     }
 
     public void OnPointerEnter(PointerEventData eventData) 
     {
-        transform.localScale = scalaOriginale * moltiplicatore;
+        TargetTransform.localScale = scalaOriginale * moltiplicatore;
     }
 
     public void OnPointerExit(PointerEventData eventData) 
     {
-        transform.localScale = scalaOriginale;
+        TargetTransform.localScale = scalaOriginale;
     }
 }
